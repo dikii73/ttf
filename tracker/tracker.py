@@ -15,13 +15,13 @@ class Tracker:
         tracker_output_format (str): Output format of the tracker.
     """
 
-    def __init__(self, max_lost=5):
+    def __init__(self, max_lost:int=5):
         self.next_track_id = 0
         self.tracks = OrderedDict()
         self.max_lost = max_lost
         self.frame_count = 0
 
-    def _add_track(self, frame_id, bbox, detection_confidence, class_id, **kwargs):
+    def _add_track(self, frame_id:int, bbox:np.ndarray, detection_confidence:float, class_id:int, center:np.ndarray, **kwargs) -> None:
         """
         Add a newly detected object to the queue.
 
@@ -34,12 +34,12 @@ class Tracker:
         """
 
         self.tracks[self.next_track_id] = Track(
-            self.next_track_id, frame_id, bbox, detection_confidence, class_id=class_id,
+            self.next_track_id, frame_id, bbox, detection_confidence, class_id=class_id, center=center,
             **kwargs
         )
         self.next_track_id += 1
 
-    def _remove_track(self, track_id):
+    def _remove_track(self, track_id:int) -> None:
         """
         Remove tracker data after object is lost.
 
@@ -49,7 +49,7 @@ class Tracker:
 
         del self.tracks[track_id]
 
-    def _update_track(self, track_id, frame_id, bbox, detection_confidence, class_id, lost=0, iou_score=0., **kwargs):
+    def _update_track(self, track_id:int, frame_id:int, bbox:np.ndarray, detection_confidence:float, class_id:int, center:np.ndarray, lost:int=0, iou_score:float=0.,  **kwargs) -> None:
         """
         Update track state.
 
@@ -65,11 +65,11 @@ class Tracker:
         """
 
         self.tracks[track_id].update(
-            frame_id, bbox, detection_confidence, class_id=class_id, lost=lost, iou_score=iou_score, **kwargs
+            frame_id, bbox, detection_confidence, class_id=class_id, lost=lost, iou_score=iou_score, center=center, **kwargs
         )
 
     @staticmethod
-    def _get_tracks(tracks):
+    def _get_tracks(tracks:tuple) -> list:
         """
         Output the information of tracks.
 
@@ -87,7 +87,7 @@ class Tracker:
         return outputs
 
     @staticmethod
-    def preprocess_input(bboxes, class_ids, detection_scores):
+    def preprocess_input(bboxes:list, class_ids:list, detection_scores:list) -> list:
         """
         Preprocess the input data.
 
@@ -107,15 +107,15 @@ class Tracker:
         new_detections = list(zip(new_bboxes, new_class_ids, new_detection_scores))
         return new_detections
 
-    def update(self, bboxes, detection_scores, class_ids):
+    def update(self, bboxes:list, detection_scores:list, class_ids:list) -> list:
         """
         Update the tracker based on the new bounding boxes.
 
         Args:
-            bboxes (numpy.ndarray or list): List of bounding boxes detected in the current frame. Each element of the list represent
+            bboxes (list): List of bounding boxes detected in the current frame. Each element of the list represent
                 coordinates of bounding box as tuple `(top-left-x, top-left-y, width, height)`.
-            detection_scores(numpy.ndarray or list): List of detection scores (probability) of each detected object.
-            class_ids (numpy.ndarray or list): List of class_ids (int) corresponding to labels of the detected object. Default is `None`.
+            detection_scores(list): List of detection scores (probability) of each detected object.
+            class_ids (list): List of class_ids (int) corresponding to labels of the detected object.
 
         Returns:
             list: List of tracks being currently tracked by the tracker. Each track is represented by the tuple with elements `(frame_id, track_id, bb_left, bb_top, bb_width, bb_height, conf, x, y, z)`.
@@ -155,9 +155,9 @@ class Tracker:
                     (i, d) for (i, d) in enumerate(centroid_distances[idx, :]) if i not in updated_detections]
 
                 if len(remaining_detections):
-                    detection_idx, detection_distance = min(remaining_detections, key=lambda x: x[1])
+                    detection_idx, _ = min(remaining_detections, key=lambda x: x[1])
                     bbox, class_id, confidence = detections[detection_idx]
-                    self._update_track(track_id, self.frame_count, bbox, confidence, class_id=class_id)
+                    self._update_track(track_id, self.frame_count, bbox, confidence, class_id=class_id, center=get_centroid(bbox))
                     updated_detections.append(detection_idx)
                     updated_tracks.append(track_id)
 
@@ -168,7 +168,7 @@ class Tracker:
 
         for i, (bbox, class_id, confidence) in enumerate(detections):
             if i not in updated_detections:
-                self._add_track(self.frame_count, bbox, confidence, class_id=class_id)
+                self._add_track(self.frame_count, bbox, confidence, class_id=class_id, center=get_centroid(bbox))
 
         outputs = self._get_tracks(self.tracks)
         return outputs

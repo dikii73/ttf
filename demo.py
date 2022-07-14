@@ -2,53 +2,61 @@ import sys
 import torch
 import cv2
 import numpy as np
-from tracker.tracker import Tracker as CentroidTracker
+from tracker.iou_tracker import IOUTracker
 from tracker.utils import draw_tracks, xyxy2xywh
 
-model_confidence = 0.6
-iou_tresh = 0.3
+class Detect():
+    def __init__(self, video:str):
+        self.model_confidence = 0.6
+        self.model = torch.hub.load('ultralytics/yolov5' , 'custom', path='model/best.pt')
+        self.model.conf = self.model_confidence
+        self.model.eval()
 
-# model 
-model = torch.hub.load('ultralytics/yolov5' , 'custom', path='model/best.pt')
-model.conf = model_confidence
-model.eval()
+        self.iou_tresh = 0.3
+        self.max_lost = 5
+        self.min_detection_confidence = 0.6
+        self.max_detection_confidence = 1
+        self.tracker = IOUTracker(
+            max_lost=self.max_lost, 
+            iou_threshold=self.iou_tresh, 
+            min_detection_confidence=self.min_detection_confidence, 
+            max_detection_confidence=self.max_detection_confidence)
+        
+        self.video = video
+        self.cap = cv2.VideoCapture(self.video)
 
-#tracker
-tracker = CentroidTracker(max_lost=25)
-
-
-#video
-video_path = sys.argv[1]
-cap = cv2.VideoCapture(video_path)           
-
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
+    def run(self) -> None:
+        while True:
+            ret, frame = self.cap.read()
+            if not ret:
+                break
     
-    image = frame.copy()
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            image = cv2.cvtColor(frame.copy(), cv2.COLOR_BGR2RGB)
 
-    results = model(image).pandas().xyxy[0]
-    if len(results) > 0:
-        detection_bboxes = []
-        detection_confidences = []
-        detection_class_ids = []
+            results = self.model(image).pandas().xyxy[0]
+            if len(results) > 0:
+                detection_bboxes = []
+                detection_confidences = []
+                detection_class_ids = []
 
-        for row in results.iterrows():
-            xmin, ymin, xmax, ymax, confidence, class_, name = row[1]
-            bbox = np.array((int(xmin), int(ymin), int(xmax), int(ymax)))
+                for row in results.iterrows():
+                    xmin, ymin, xmax, ymax, confidence, class_, _ = row[1]
+                    bbox = np.array((int(xmin), int(ymin), int(xmax), int(ymax)))
 
-            cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0,0,255))
+                    cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0,0,255))
 
-            bbox = xyxy2xywh(bbox)
-            detection_bboxes.append(bbox)
-            detection_confidences.append(confidence)
-            detection_class_ids.append(class_)
+                    bbox = xyxy2xywh(bbox)
+                    detection_bboxes.append(bbox)
+                    detection_confidences.append(confidence)
+                    detection_class_ids.append(class_)
 
-        output_tracks = tracker.update(detection_bboxes, detection_confidences, detection_class_ids)
-        print(output_tracks)
-        frame = draw_tracks(frame, output_tracks)
-            
-    cv2.imshow('', frame)
-    cv2.waitKey(25)
+                output_tracks = self.tracker.update(detection_bboxes, detection_confidences, detection_class_ids)
+                frame = draw_tracks(frame, output_tracks)
+                    
+            cv2.imshow('', frame)
+            cv2.waitKey(25)
+
+
+if __name__ == '__main__':
+    video = sys.argv[1]
+    Detect(video=video)

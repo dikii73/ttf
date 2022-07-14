@@ -20,10 +20,11 @@ class Track:
 
     def __init__(
         self,
-        track_id,
-        frame_id,
-        bbox,
-        detection_confidence,
+        track_id:int,
+        frame_id:int,
+        bbox:np.ndarray,
+        detection_confidence:float,
+        center:np.ndarray,
         class_id=None,
         lost=0,
         iou_score=0.,
@@ -35,12 +36,13 @@ class Track:
         self.detection_confidence_max = 0.
         self.lost = 0
         self.age = 0
+        self.centers = []
 
-        self.update(frame_id, bbox, detection_confidence, class_id=class_id, lost=lost, iou_score=iou_score, **kwargs)
+        self.update(frame_id, bbox, detection_confidence, class_id=class_id, lost=lost, iou_score=iou_score, center=center, **kwargs)
 
-        self.output = self.get_mot_challenge_format
+        self.output = self.get_output
 
-    def update(self, frame_id, bbox, detection_confidence, class_id=None, lost=0, iou_score=0., **kwargs):
+    def update(self, frame_id:int, bbox:np.ndarray, detection_confidence:float, center:np.ndarray, class_id=None, lost:int=0, iou_score:float=0., **kwargs) -> None:
         """
         Update the track.
 
@@ -58,6 +60,7 @@ class Track:
         self.detection_confidence = detection_confidence
         self.frame_id = frame_id
         self.iou_score = iou_score
+        self.centers.append([*map(int, center)])
 
         if lost == 0:
             self.lost = 0
@@ -72,7 +75,7 @@ class Track:
         self.age += 1
 
     @property
-    def centroid(self):
+    def centroid(self) -> np.array:
         """
         Return the centroid of the bounding box.
 
@@ -82,16 +85,16 @@ class Track:
         """
         return np.array((self.bbox[0]+0.5*self.bbox[2], self.bbox[1]+0.5*self.bbox[3]))
 
-    def get_mot_challenge_format(self):
+    def get_output(self) -> tuple:
         """
         Get the tracker data in MOT challenge format as a tuple of elements containing
-        `(frame, id, bb_left, bb_top, bb_width, bb_height, conf)`
+        `(frame, id, bb_left, bb_top, bb_width, bb_height, conf, centers)`
 
         Returns:
-            tuple: Tuple of 7 elements representing `(frame, id, bb_left, bb_top, bb_width, bb_height, conf)`.
+            tuple: Tuple of 8 elements representing `(frame, id, bb_left, bb_top, bb_width, bb_height, conf, centers)`.
 
         """
-        mot_tuple = (
-            self.frame_id, self.id, self.bbox[0], self.bbox[1], self.bbox[2], self.bbox[3], self.detection_confidence
+        _tuple = (
+            self.frame_id, self.id, self.bbox[0], self.bbox[1], self.bbox[2], self.bbox[3], self.detection_confidence, self.centers
         )
-        return mot_tuple
+        return _tuple
