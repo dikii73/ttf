@@ -1,15 +1,12 @@
 import sys
-#import dlib
 import torch
 import cv2
-#import pandas as pd
-from motrackers import CentroidTracker, utils, IOUTracker
 import numpy as np
+from tracker.tracker import Tracker as CentroidTracker
+from tracker.utils import draw_tracks, xyxy2xywh
 
-
-# cfg
-model_confidence = 0.4
-iou_tresh = 0.5
+model_confidence = 0.6
+iou_tresh = 0.3
 
 # model 
 model = torch.hub.load('ultralytics/yolov5' , 'custom', path='model/best.pt')
@@ -17,13 +14,8 @@ model.conf = model_confidence
 model.eval()
 
 #tracker
-tracker = CentroidTracker()
-tracker = IOUTracker(
-    max_lost=25, 
-    iou_threshold=iou_tresh, 
-    min_detection_confidence=model_confidence, 
-    max_detection_confidence=0.8,
-    tracker_output_format='mot_challenge')
+tracker = CentroidTracker(max_lost=25)
+
 
 #video
 video_path = sys.argv[1]
@@ -45,19 +37,18 @@ while True:
 
         for row in results.iterrows():
             xmin, ymin, xmax, ymax, confidence, class_, name = row[1]
-            box = [int(xmin), int(ymin), int(xmax), int(ymax)]
-            print(xmin, ymin, xmax, ymax, confidence, class_, name)
-            cv2.rectangle(frame, (box[0], box[1]), (box[2], box[3]), (255,0,0))
-            cv2.putText(frame, name, (box[0], box[1] - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 0, 0), 2)
-            
-            box = utils.misc.xyxy2xywh(np.array(box))
-            detection_bboxes.append(box)
+            bbox = np.array((int(xmin), int(ymin), int(xmax), int(ymax)))
+
+            cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0,0,255))
+
+            bbox = xyxy2xywh(bbox)
+            detection_bboxes.append(bbox)
             detection_confidences.append(confidence)
             detection_class_ids.append(class_)
 
-    
         output_tracks = tracker.update(detection_bboxes, detection_confidences, detection_class_ids)
-        frame = utils.draw_tracks(frame, output_tracks)
+        print(output_tracks)
+        frame = draw_tracks(frame, output_tracks)
             
     cv2.imshow('', frame)
     cv2.waitKey(25)
