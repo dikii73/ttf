@@ -87,14 +87,12 @@ class Track:
 
     def get_output(self) -> tuple:
         """
-        Get the tracker data in MOT challenge format as a tuple of elements containing
-        `(frame, id, bb_left, bb_top, bb_width, bb_height, conf, centers)`
 
         Returns:
-            tuple: Tuple of 8 elements representing `(frame, id, bb_left, bb_top, bb_width, bb_height, conf, centers)`.
+            tuple: Tuple of 8 elements representing `(frame, id, bb_left, bb_top, bb_width, bb_height, conf, centers, age)`.
 
         """
         _tuple = (
-            self.frame_id, self.id, self.bbox[0], self.bbox[1], self.bbox[2], self.bbox[3], self.detection_confidence, self.centers
+            self.frame_id, self.id, self.bbox[0], self.bbox[1], self.bbox[2], self.bbox[3], self.detection_confidence, self.centers, self.age
         )
         return _tuple

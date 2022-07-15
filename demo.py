@@ -13,15 +13,11 @@ class Detect():
         self.model.conf = self.model_confidence
         self.model.iou = self.model_iou
 
-        self.iou_tresh = 0.3
+        self.iou_tresh = 0.45
         self.max_lost = 10
-        self.min_detection_confidence = self.model_confidence
-        self.max_detection_confidence = 0.95
         self.tracker = IOUTracker(
             max_lost=self.max_lost, 
-            iou_threshold=self.iou_tresh, 
-            min_detection_confidence=self.min_detection_confidence, 
-            max_detection_confidence=self.max_detection_confidence)
+            iou_threshold=self.iou_tresh)
         
         self.video = video
         self.cap = cv2.VideoCapture(self.video)
@@ -43,8 +39,6 @@ class Detect():
                 for row in results.iterrows():
                     xmin, ymin, xmax, ymax, confidence, class_, _ = row[1]
                     bbox = np.array((int(xmin), int(ymin), int(xmax), int(ymax)))
-
-                    cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0,0,255))
 
                     bbox = xyxy2xywh(bbox)
                     detection_bboxes.append(bbox)

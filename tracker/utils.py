@@ -40,30 +40,36 @@ def draw_tracks(image:np.ndarray, tracks:list) -> np.ndarray:
     Returns:
         numpy.ndarray: image with the track-ids drawn on it.
     """
+    min_age = 10 # min age for draw track 
 
     for trk in tracks:
 
         trk_id = trk[1]
-        xmin = trk[2]
-        ymin = trk[3]
-        width = trk[4]
-        height = trk[5]
+        xmin = int(trk[2])
+        ymin = int(trk[3])
+        width = int(trk[4])
+        height = int(trk[5])
         points_center = trk[7]
+        age = trk[8]
+           
+        if age > min_age: 
 
-        if len(points_center) > 1:
-            for i, point in enumerate(points_center):
-                cv2.circle(image, (point[0], point[1]), 4, (0, 0, 255), -1)
-                if i > 0:
-                    cv2.line(image, (points_center[i-1][0], points_center[i-1][1]), (point[0], point[1]), (0, 0, 255), 2)
-        else:
-            cv2.circle(image, (points_center[0][0], points_center[0][1]), 4, (0, 0, 255), -1)
-        
-        xcentroid, ycentroid = int(xmin + 0.5*width), int(ymin + 0.5*height)
+            cv2.rectangle(image, (xmin, ymin), (xmin + width, ymin + height), (0,0,255), 2)
 
-        text = "ID {}".format(trk_id)
+            if len(points_center) > 1:
+                for i, point in enumerate(points_center):
+                    cv2.circle(image, (point[0], point[1]), 4, (0, 0, 255), -1)
+                    if i > 0:
+                        cv2.line(image, (points_center[i-1][0], points_center[i-1][1]), (point[0], point[1]), (0, 0, 255), 2)
+            else:
+                cv2.circle(image, (points_center[0][0], points_center[0][1]), 4, (0, 0, 255), -1)
+            
+            xcentroid, ycentroid = int(xmin + 0.5*width), int(ymin + 0.5*height)
 
-        cv2.putText(image, text, (xcentroid - 10, ycentroid - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-        cv2.circle(image, (xcentroid, ycentroid), 4, (0, 255, 0), -1)
+            text = "ID {}".format(trk_id)
+
+            cv2.putText(image, text, (xcentroid - 10, ycentroid - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.circle(image, (xcentroid, ycentroid), 4, (0, 255, 0), -1)
 
     return image
 

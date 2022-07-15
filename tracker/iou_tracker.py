@@ -8,8 +8,6 @@ class IOUTracker(Tracker):
     Args:
         max_lost (int): Maximum number of consecutive frames object was not detected.
         tracker_output_format (str): Output format of the tracker.
-        min_detection_confidence (float): Threshold for minimum detection confidence.
-        max_detection_confidence (float): Threshold for max. detection confidence.
         iou_threshold (float): Intersection over union minimum value.
     """
 
@@ -17,12 +15,8 @@ class IOUTracker(Tracker):
             self,
             max_lost=2,
             iou_threshold=0.5,
-            min_detection_confidence=0.4,
-            max_detection_confidence=0.7,
     ):
         self.iou_threshold = iou_threshold
-        self.max_detection_confidence = max_detection_confidence
-        self.min_detection_confidence = min_detection_confidence
 
         super(IOUTracker, self).__init__(max_lost=max_lost)
 
