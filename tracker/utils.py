@@ -51,7 +51,6 @@ def draw_tracks(image:np.ndarray, tracks:list) -> np.ndarray:
         points_center = trk[7]
 
         if len(points_center) > 1:
-            print(points_center)
             for i, point in enumerate(points_center):
                 cv2.circle(image, (point[0], point[1]), 4, (0, 0, 255), -1)
                 if i > 0:

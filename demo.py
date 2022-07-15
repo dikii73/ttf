@@ -8,14 +8,15 @@ from tracker.utils import draw_tracks, xyxy2xywh
 class Detect():
     def __init__(self, video:str):
         self.model_confidence = 0.6
+        self.model_iou = 0.45
         self.model = torch.hub.load('ultralytics/yolov5' , 'custom', path='model/best.pt')
         self.model.conf = self.model_confidence
-        self.model.eval()
+        self.model.iou = self.model_iou
 
         self.iou_tresh = 0.3
-        self.max_lost = 5
-        self.min_detection_confidence = 0.6
-        self.max_detection_confidence = 1
+        self.max_lost = 10
+        self.min_detection_confidence = self.model_confidence
+        self.max_detection_confidence = 0.95
         self.tracker = IOUTracker(
             max_lost=self.max_lost, 
             iou_threshold=self.iou_tresh, 
@@ -59,4 +60,5 @@ class Detect():
 
 if __name__ == '__main__':
     video = sys.argv[1]
-    Detect(video=video)
+    det = Detect(video=video)
+    det.run()
