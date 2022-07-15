@@ -12,7 +12,7 @@ pip install -r requirements.txt
 
 # Run
 
-demo.py 'path to video'
+python3 demo.py 'path to video'
 
 # Train
 
